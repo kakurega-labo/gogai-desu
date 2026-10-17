@@ -87,7 +87,9 @@ async function post(ctx,env,req){
  let b;try{b=await req.json()}catch(e){return J({error:'bad json'},400)}
  const h=await hashId(b&&b.id);if(!h)return J({error:'no id'},400);
  const d=day(),s=statsOf(b),p=paperOf(s),season=seasonOf(d);
- const raw=cleanName(b&&b.name),name=raw&&!badName(raw)?raw:'';
+ const raw=cleanName(b&&b.name);
+ if(!raw||badName(raw))return J({error:'name'},400);   // 掲示板はニックネームが必須。使えない名前ははじく
+ const name=raw;
  const kind=KINDS.includes(b&&b.kind)?b.kind:p.kind,ph=photoOf(b&&b.photo),t=Date.now();
  // 前日以前の号外を貼り替える（掲示板は今日の分だけ）
  ctx.waitUntil(env.DB.batch([env.DB.prepare('DELETE FROM board WHERE d<?').bind(d),env.DB.prepare('DELETE FROM boardn WHERE d<?').bind(d)]));
