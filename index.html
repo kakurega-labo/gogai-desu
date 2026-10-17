@@ -126,6 +126,11 @@ h1{margin:0;font-family:var(--serif);font-weight:900;font-size:clamp(24px,10vw,4
 .postrow input{font:inherit;font-size:14px;padding:10px;border-radius:4px;border:1.5px solid rgba(245,239,226,.7);background:rgba(245,239,226,.95);color:var(--sumi);min-width:0}
 .pin{font-family:var(--sans);font-weight:700;font-size:14px;background:#7A5634;color:var(--kinari);border:0;border-radius:4px;padding:10px 14px;cursor:pointer;white-space:nowrap}
 .pin:disabled{opacity:.7}
+.posterr{grid-column:1/-1;order:-1;margin:0;font-size:12px;font-weight:700;color:#F2D46B}
+.postrow input.bad{border-color:var(--shu);box-shadow:0 0 0 2px var(--shu)}
+.postrow input.shake{animation:shake .32s}
+@keyframes shake{20%{transform:translateX(-5px)}45%{transform:translateX(5px)}70%{transform:translateX(-3px)}90%{transform:translateX(2px)}}
+@media (prefers-reduced-motion:reduce){.postrow input.shake{animation:none}}
 .postdone{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:center;color:var(--kinari);font-size:13px;font-weight:700}
 .postdone .ghost{padding:10px 14px;font-size:14px}
 .boardlink{font-family:var(--sans);font-weight:700;font-size:14px;background:transparent;color:var(--ai);border:1.5px solid var(--ai);border-radius:4px;padding:10px;cursor:pointer}
@@ -273,8 +278,9 @@ h1{margin:0;font-family:var(--serif);font-weight:900;font-size:clamp(24px,10vw,4
           </div>
           <div class="postrow" id="postRow">
             <label class="sr" for="postName">ニックネーム</label>
-            <input id="postName" maxlength="10" placeholder="ニックネーム(10文字まで)" autocomplete="nickname">
+            <input id="postName" maxlength="10" placeholder="ニックネーム(10文字まで)" required autocomplete="nickname">
             <button class="pin" id="postBtn">掲示板に貼る</button>
+            <p class="posterr" id="postErr" hidden></p>
           </div>
           <div class="postdone" id="postDone" hidden>
             <span id="postDoneText"></span>
@@ -2177,8 +2183,10 @@ async function api(path, body){
   const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 5000);
   try{
     const res = await fetch(API + path, body ? { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify(body), signal: ctl.signal } : { signal: ctl.signal });
-    if(!res.ok || !(res.headers.get('content-type') || '').includes('json')) throw new Error('bad');
-    liveApi = true; return await res.json();
+    if(!(res.headers.get('content-type') || '').includes('json')) throw new Error('bad');
+    const j = await res.json();
+    if(!res.ok && !(j && j.error === 'name')) throw new Error('bad');
+    liveApi = true; return j;
   }catch(e){ liveApi = false; return null; }
   finally{ clearTimeout(tm); }
 }
@@ -2194,13 +2202,22 @@ function smallPhoto(){
   c.getContext('2d').drawImage(src, 0, 0, 360, 230);
   try{ return c.toDataURL('image/jpeg', 0.72); }catch(e){ return null; }
 }
+function nameError(msg){
+  const el = document.getElementById('postErr'), inp = document.getElementById('postName');
+  el.textContent = msg; el.hidden = !msg;
+  inp.classList.toggle('bad', !!msg);
+  if(msg){ inp.classList.remove('shake'); void inp.offsetWidth; inp.classList.add('shake'); inp.focus(); }
+}
 async function postBoard(){
   const btn = document.getElementById('postBtn'), nameEl = document.getElementById('postName');
   const name = nameEl.value.trim().slice(0, 10);
+  if(!name){ nameError('ニックネームを入れてから貼ってください'); return; }
+  nameError('');
   try{ localStorage.setItem('gg_name', name); }catch(e){}
   btn.disabled = true; btn.textContent = '貼り出し中…';
   const photo = smallPhoto();
   const r = await api('/post', Object.assign(statsBody(), { id: myId(), name, kind: paper.kind, photo }));
+  if(r && r.error === 'name'){ btn.disabled = false; btn.textContent = '掲示板に貼る'; nameError('そのニックネームは使えません。別の名前にしてください'); return; }
   let no;
   if(r && r.no) no = r.no;
   else if(!DEMO){ btn.disabled = false; btn.textContent = '貼れませんでした。もう一度'; return; }
@@ -2217,10 +2234,10 @@ async function postBoard(){
 const MOCK = [
   { head:'完売御礼', sub2:'時間内に完売', delivered:100, rank:'伝説の号外屋', nick:'流れを読む人', name:'駅前太郎' },
   { head:'駅員が注意2回', sub2:'点字ブロックに号外', delivered:52, rank:'駅前の顔', nick:'駅員の顔なじみ', name:'みかん' },
-  { head:'パシッと61部', sub2:'駅前に快音響く', delivered:83, rank:'号外職人', nick:'待てる人', name:'' },
+  { head:'パシッと61部', sub2:'駅前に快音響く', delivered:83, rank:'号外職人', nick:'待てる人', name:'朝の人' },
   { head:'空振り14回', sub2:'それでも腕は伸びる', delivered:37, rank:'見習い配り', nick:'', name:'ぽち' },
   { head:'本日48部', sub2:'駅前に号外舞う', delivered:48, rank:'駅前の顔', nick:'気づかいの人', name:'はるか' },
-  { head:'突風で4部', sub2:'号外、空へ舞う', delivered:55, rank:'駅前の顔', nick:'風に好かれた人', name:'' },
+  { head:'突風で4部', sub2:'号外、空へ舞う', delivered:55, rank:'駅前の顔', nick:'風に好かれた人', name:'のぼり' },
   { head:'押しつけ9回', sub2:'駅前に緊張走る', delivered:41, rank:'駅前の顔', nick:'', name:'号外好き' },
   { head:'配布中止', sub2:'駅員が制止', delivered:12, rank:'出入り禁止', nick:'', name:'こたつ' },
 ].map((m, i) => Object.assign({ no: i + 1, t: Date.now() - (8 - i)*420000, kind:'pass', season:'', mock:true }, m));
@@ -2308,6 +2325,7 @@ async function openDetail(r, i, mine){
   document.getElementById('bDetail').hidden = false;
 }
 document.getElementById('postBtn').addEventListener('click', postBoard);
+document.getElementById('postName').addEventListener('input', () => nameError(''));
 document.getElementById('openBoard1').addEventListener('click', () => openBoard(0));
 document.getElementById('openBoard2').addEventListener('click', () => openBoard(0));
 document.getElementById('bClose').addEventListener('click', () => { document.getElementById('board').hidden = true; });
