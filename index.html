@@ -2055,11 +2055,23 @@ function renderPaper(){
   vchars(g, P.rank, P.nick ? bxx + boxW - 38 : bxx + boxW/2, byy + 46, rfs, SUMI, 1.08);
   if(P.nick){ g.font = `900 ${nfs}px ${SERIF}`; vchars(g, P.nick, bxx + 30, byy + 46, nfs, C.ai, 1.08); }
   // 記事本文（1字下げ）
-  const ax = mx, aw = mw - boxW - 22, afs = 25, alh = 42, ayEnd = Hc - 300;
-  g.fillStyle = SUMI; g.font = `500 ${afs}px ${SANS}`; g.textAlign = 'left'; g.textBaseline = 'top';
-  let lines = wrapChars(g, '　' + P.body, aw);
-  const maxL = Math.floor((ayEnd - (ry + 18))/alh);
-  if(lines.length > maxL){ lines = lines.slice(0, maxL); lines[maxL - 1] = lines[maxL - 1].slice(0, -1) + '…'; }
+  // 記事は途中で切らない。入りきらないときは、文字を少しずつ小さくして全文を載せる
+  const ax = mx, aw = mw - boxW - 22, ayEnd = Hc - 296, room = ayEnd - (ry + 18);
+  let afs = 25, alh, lines;
+  for(;;){
+    alh = afs*1.66; g.font = `500 ${afs}px ${SANS}`;
+    lines = wrapChars(g, '　' + P.body, aw);
+    if(lines.length*alh <= room || afs <= 15) break;
+    afs -= 0.5;
+  }
+  // それでも入らないとき（ほぼ起きない）は、最後の文を丸ごと外す。文の途中では切らない
+  let body = P.body;
+  while(lines.length*alh > room){
+    const cut = body.slice(0, -1).lastIndexOf('。');
+    if(cut < 0) break;
+    body = body.slice(0, cut + 1); lines = wrapChars(g, '　' + body, aw);
+  }
+  g.fillStyle = SUMI; g.textAlign = 'left'; g.textBaseline = 'top';
   lines.forEach((l, i) => g.fillText(l, ax, ry + 18 + i*alh));
   // 部数と内訳
   const ly = Hc - 270;
@@ -2109,7 +2121,7 @@ function renderPaper(){
 }
 function shareText(){
   const P = paper;
-  return `あるある新聞【号外】${P.head}　${P.sub2}\n配った部数 ${P.delivered}部｜${P.rank}${P.nick ? '・' + P.nick : ''}\n#号外でーす #あるある通り\n${GAME_URL}`;
+  return `あるある新聞【号外】${P.head}　${P.sub2}\n配った部数 ${P.delivered}部｜${P.rank}${P.nick ? '・' + P.nick : ''}\n#あるある新聞号外 #あるある通り\n${GAME_URL}`;
 }
 async function sharePaper(){
   if(!paper) return;
