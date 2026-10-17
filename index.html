@@ -126,17 +126,17 @@ h1{margin:0;font-family:var(--serif);font-weight:900;font-size:clamp(24px,10vw,4
 .postdone .ghost{padding:10px 14px;font-size:14px}
 .boardlink{font-family:var(--sans);font-weight:700;font-size:14px;background:transparent;color:var(--ai);border:1.5px solid var(--ai);border-radius:4px;padding:10px;cursor:pointer}
 /* 掲示板：木の枠にコルク。号外は画鋲で留めて、少しずつ傾ける */
-.board{align-items:start}
-.bwrap{width:100%;max-width:360px;display:grid;gap:10px}
-.bframe{border:9px solid #7A5634;border-radius:3px;box-shadow:inset 0 0 0 2px #5E4128,0 18px 40px rgba(0,0,0,.4);
-  background:#B98C5C radial-gradient(rgba(90,60,30,.35) 1px,transparent 1.4px) 0 0/7px 7px;padding:10px 10px 14px;display:grid;gap:8px}
+.board{align-items:stretch;overflow:hidden}
+.bwrap{width:100%;max-width:360px;height:100%;min-height:0;display:grid;grid-template-rows:minmax(0,1fr) auto;gap:10px;justify-self:center}
+.bframe{min-height:0;overflow:hidden;border:9px solid #7A5634;border-radius:3px;box-shadow:inset 0 0 0 2px #5E4128,0 18px 40px rgba(0,0,0,.4);
+  background:#B98C5C radial-gradient(rgba(90,60,30,.35) 1px,transparent 1.4px) 0 0/7px 7px;padding:10px 10px 14px;display:flex;flex-direction:column;gap:8px}
 .bplate{background:var(--ai);color:var(--kinari);text-align:center;padding:6px 8px;border-radius:2px;display:grid;gap:1px;box-shadow:0 2px 0 rgba(0,0,0,.25)}
 .bplate span{font-family:var(--serif);font-weight:900;font-size:20px;letter-spacing:.1em}
 .bplate small{font-size:10px;opacity:.85}
 .bhead{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 8px;color:#2B1E12;font-size:11px;font-weight:700}
 .bhead b{font-size:13px}
 .bmock{margin:0;font-size:11px;background:rgba(247,242,230,.9);color:var(--sumi);padding:5px 8px;border-radius:2px}
-.blist{display:grid;grid-template-columns:1fr 1fr;gap:16px 12px;padding-top:6px}
+.blist{display:grid;grid-template-columns:1fr 1fr;align-content:start;gap:16px 12px;padding:12px 6px 10px;margin:0 -6px;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .bempty{grid-column:1/-1;margin:20px 0;text-align:center;color:#2B1E12;font-size:13px;line-height:1.7;font-weight:700}
 .bnav{display:flex;justify-content:space-between;align-items:center;color:#2B1E12;font-size:12px;font-weight:700}
 .bnav button{font:inherit;background:var(--kinari);border:0;border-radius:3px;padding:6px 10px;cursor:pointer}
