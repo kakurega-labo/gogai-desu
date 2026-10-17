@@ -110,6 +110,10 @@ h1{margin:0;font-family:var(--serif);font-weight:900;font-size:clamp(24px,10vw,4
 .np-notice{border:1px solid var(--sumi);padding:5px;display:grid;gap:3px}
 .np-notice b{font-size:10px;text-align:center}
 .np-notice p{margin:0;font-size:9.5px;line-height:1.5}
+.np-ad{display:grid;gap:3px;justify-items:center;text-align:center;border:1.5px dashed var(--sumi);padding:6px 4px;color:var(--sumi);text-decoration:none}
+.np-ad .adl{font-size:8px;font-weight:700;color:var(--kinari);background:var(--sumi);padding:0 5px;border-radius:1px}
+.np-ad b{font-family:var(--serif);font-weight:900;font-size:10px;line-height:1.45;white-space:nowrap}
+.np-ad .adu{font-size:7.5px;color:#4A433B;line-height:1.3}
 .btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .rbtns{display:grid;gap:10px}
 .rbtns .again{font-size:20px;padding:17px}
@@ -164,6 +168,10 @@ h1{margin:0;font-family:var(--serif);font-weight:900;font-size:clamp(24px,10vw,4
 .mini.big .mtop{font-size:11px}.mini.big .msub{font-size:16px}.mini.big .mfoot{font-size:12px}.mini.big .mfoot b{font-size:20px}
 .mini.big .mrank{font-size:12px}.mini.big .mph em{font-size:12px}
 .mtime{font-size:10px;color:#6D655B}
+.mini.big.pop{animation:pop .24s cubic-bezier(.2,.9,.3,1.15)}
+@keyframes pop{from{transform:translateY(14px) scale(.92);opacity:0}}
+@media (prefers-reduced-motion:reduce){.mini.big.pop{animation:none}}
+.mph img{content-visibility:auto}
 .note{margin:0;font-size:11px;color:rgba(245,239,226,.75);text-align:center}
 </style>
 </head>
@@ -253,6 +261,7 @@ h1{margin:0;font-family:var(--serif);font-weight:900;font-size:clamp(24px,10vw,4
               <p class="np-small" style="border-bottom:0">あるある新聞</p>
               <p class="np-small np-date"><span id="rDateY"></span><b id="rDateMD"></b></p>
               <div class="np-notice"><b>告知</b><p>駅前の掲示板に、みんなの号外が貼り出されています。</p></div>
+              <a class="np-ad" href="https://aruaru-dori.pages.dev/" target="_blank" rel="noopener"><span class="adl">広告</span><b>当社は<br>あるある通りに<br>あるお店です</b><span class="adu">aruaru-dori<wbr>.pages.dev</span></a>
             </aside>
           </div>
         </article>
@@ -2117,6 +2126,14 @@ function renderPaper(){
   g.fillStyle = SUMI; g.font = `500 20px ${SANS}`;
   ['あるある通り','3番地 駅前で','営業中'].forEach((t, i) => g.fillText(t, sx + sideW/2, y2 + 118 + i*30));
   g.fillStyle = MUTE; g.font = `500 15px ${SANS}`; g.fillText(GAME_URL.replace(/^https?:\/\//, '').replace(/\/$/, ''), sx + sideW/2, y2 + 212);
+  // 広告：あるある通りの案内
+  const ay = y2 + 248, ah = 156;
+  g.setLineDash([8, 6]); g.lineWidth = 2; g.strokeStyle = SUMI; g.strokeRect(sx, ay, sideW, ah); g.setLineDash([]);
+  g.fillStyle = SUMI; g.fillRect(sx + sideW/2 - 30, ay + 12, 60, 24);
+  g.fillStyle = C.kinari; g.font = `700 16px ${SANS}`; g.fillText('広告', sx + sideW/2, ay + 24);
+  g.fillStyle = SUMI; g.font = `900 21px ${SERIF}`;
+  ['当社は','あるある通りに','あるお店です'].forEach((t, i) => g.fillText(t, sx + sideW/2, ay + 58 + i*27));
+  g.fillStyle = MUTE; g.font = `500 14px ${SANS}`; g.fillText('aruaru-dori.pages.dev', sx + sideW/2, ay + ah - 18);
   return c;
 }
 function shareText(){
@@ -2277,9 +2294,17 @@ function miniPaper(r, i, mine, big){
   return card;
 }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c])); }
-function openDetail(r, i, mine){
+let detailSeq = 0;
+async function openDetail(r, i, mine){
+  const seq = ++detailSeq;
   const box = document.getElementById('bDetailCard'); box.innerHTML = '';
-  const card = miniPaper(r, i, mine, true); card.disabled = true; box.appendChild(card);
+  const card = miniPaper(r, i, mine, true); card.disabled = true;
+  // 写真は掲示板で読み込み済みのものを使う。描ける状態になってから開くので、あとから写真が飛び込んでこない
+  const img = card.querySelector('img');
+  if(img){ img.loading = 'eager'; try{ await Promise.race([img.decode(), new Promise(r => setTimeout(r, 500))]); }catch(e){} }
+  if(seq !== detailSeq) return;
+  box.appendChild(card);
+  card.classList.remove('pop'); void card.offsetWidth; card.classList.add('pop');
   document.getElementById('bDetail').hidden = false;
 }
 document.getElementById('postBtn').addEventListener('click', postBoard);
